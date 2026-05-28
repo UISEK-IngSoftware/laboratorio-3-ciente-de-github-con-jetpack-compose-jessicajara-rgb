@@ -1,6 +1,5 @@
 package ec.edu.uisek.githubclient.ui.components
 
-import android.R
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -82,12 +80,11 @@ fun RepoItemPreview(){
         name = "Repo Name",
         owner = GitHubUser(
             id = "1",
-            name = "User Name",
+            login = "User Name",
             avatarUrl = "https://avatars.githubusercontent.com/u/1?v=4"
         ),
         description = "Repo Description",
-        "Kotlin"
+        language = "Kotlin"
     )
     RepoItem (repository )
-
 }

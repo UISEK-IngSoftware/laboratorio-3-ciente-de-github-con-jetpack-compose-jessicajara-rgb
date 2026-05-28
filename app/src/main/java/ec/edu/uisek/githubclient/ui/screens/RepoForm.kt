@@ -30,17 +30,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ec.edu.uisek.githubclient.ui.theme.GithubClientTheme
+import ec.edu.uisek.githubclient.models.Repository
 import ec.edu.uisek.githubclient.viewmodels.RepoFormViewModel
-import kotlin.properties.ReadOnlyProperty
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepoForm(
+    repository: Repository? = null,
     onBackClick: () -> Unit = {},
     onSaveSuccess: () -> Unit = {},
     viewModel: RepoFormViewModel = viewModel()
@@ -49,20 +47,22 @@ fun RepoForm(
     val isSuccess by viewModel.isSuccess.collectAsState()
     val errorMsg by viewModel.errorMsg.collectAsState()
 
-    var name by remember { mutableStateOf(value = "") }
-    var description by remember { mutableStateOf(value = "") }
+    var name by remember { mutableStateOf(repository?.name ?: "") }
+    var description by remember { mutableStateOf(repository?.description ?: "") }
 
-    LaunchedEffect (isSuccess) {
+    LaunchedEffect(isSuccess) {
         if (isSuccess) {
             onSaveSuccess()
             viewModel.resetSuccess()
         }
     }
 
-    Scaffold (
+    Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Nuevo repositorio") },
+                title = { 
+                    Text(text = if (repository == null) "Nuevo repositorio" else "Editar repositorio") 
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -77,51 +77,57 @@ fun RepoForm(
                 )
             )
         }
-    ){ paddingValues ->
-        Column (
+    ) { paddingValues ->
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(all = 16.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
-        ){
+        ) {
             OutlinedTextField(
                 value = name,
-                onValueChange = {name = it},
+                onValueChange = { name = it },
                 label = { Text(text = "Nombre del repositorio") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
-            Spacer(modifier = Modifier.height(height = 16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = description,
-                onValueChange = {description= it},
-                label = { Text(text = "Descripcion del repositorio (opcional)") },
+                onValueChange = { description = it },
+                label = { Text(text = "Descripción") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
-            Spacer(modifier = Modifier.height(height = 16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            errorMsg?.let {
+                Text(text = it, color = MaterialTheme.colorScheme.error)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Button(
-                onClick = { viewModel.createRepo(name, description) },
+                onClick = {
+                    if (repository == null) {
+                        viewModel.createRepo(name, description)
+                    } else {
+                        viewModel.updateRepo(
+                            owner = repository.owner.login,
+                            oldName = repository.name,
+                            newName = name,
+                            description = description
+                        )
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = !name.isBlank()
+                enabled = name.isNotBlank() && !isLoading
             ) {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Guardar"
-                )
-                Spacer(Modifier.width(width = 8.dp))
-                Text(text = "Guardar")
+                Icon(Icons.Default.CheckCircle, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(text = if (repository == null) "Guardar" else "Actualizar")
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RepoFormPreview(){
-    GithubClientTheme (dynamicColor = true){
-        RepoForm()
     }
 }
