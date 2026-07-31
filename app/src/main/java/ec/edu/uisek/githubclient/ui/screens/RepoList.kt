@@ -10,8 +10,11 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -19,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -44,11 +48,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ec.edu.uisek.githubclient.models.Repository
 import ec.edu.uisek.githubclient.ui.components.RepoItem
+import ec.edu.uisek.githubclient.ui.theme.GithubClientTheme
 import ec.edu.uisek.githubclient.viewmodels.RepoListViewModel
 import kotlin.math.roundToInt
 
@@ -59,29 +65,50 @@ enum class DragValue { Start, Center }
 fun RepoList(
      modifier: Modifier = Modifier,
      viewModel: RepoListViewModel = viewModel(),
-     onNavigateToForm: (Repository?) -> Unit = {}
+     onNavigateToForm: (Repository?) -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val repos by viewModel.repos.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMsg by viewModel.errorMsg.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.fetchRepos()
+    }
 
     var repoToDelete by remember { mutableStateOf<Repository?>(null) }
     val density = LocalDensity.current
 
     Scaffold (
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { onNavigateToForm(null) },
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                elevation = FloatingActionButtonDefaults.elevation(8.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Agregar")
+            Column(horizontalAlignment = Alignment.End){
+                FloatingActionButton(
+                    onClick = { onNavigateToForm(null) },
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Agregar")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                FloatingActionButton(
+                    onClick = onLogout,
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Cerrar Sesión")
+                }
             }
         }
     ) { innerPadding ->
-        Box (modifier = modifier.fillMaxSize().padding(innerPadding)){
+        Box (modifier = modifier
+            .fillMaxSize()
+            .padding(innerPadding)){
             if (isLoading && repos.isEmpty()) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             }
@@ -90,7 +117,9 @@ fun RepoList(
                 Text(
                     text = message,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(16.dp)
                 )
             }
 
@@ -142,7 +171,8 @@ fun RepoList(
                         Box(
                             modifier = Modifier
                                 .offset {
-                                    val offset = state.requireOffset().coerceIn(-maxActionSizePx, 0f)
+                                    val offset =
+                                        state.requireOffset().coerceIn(-maxActionSizePx, 0f)
                                     IntOffset(x = offset.roundToInt(), y = 0)
                                 }
                                 .anchoredDraggable(state, Orientation.Horizontal)
@@ -173,5 +203,13 @@ fun RepoList(
                 }
             )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun RepoListPreview(){
+    GithubClientTheme { 
+        RepoList()
     }
 }

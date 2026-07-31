@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ec.edu.uisek.githubclient.models.Repository
+import ec.edu.uisek.githubclient.services.AuthService
+import ec.edu.uisek.githubclient.ui.screens.LoginForm
 import ec.edu.uisek.githubclient.ui.screens.RepoForm
 import ec.edu.uisek.githubclient.ui.screens.RepoList
 import ec.edu.uisek.githubclient.viewmodels.RepoListViewModel
@@ -19,30 +21,30 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val authService = AuthService(context = this)
+
         setContent {
             GithubClientTheme {
-
                 val listViewModel: RepoListViewModel = viewModel()
-                var currentScreen by remember { mutableStateOf("repoList") }
-                var selectedRepo by remember { mutableStateOf<Repository?>(null) }
-
+                var currentScreen by remember { mutableStateOf(
+                    if (authService.isLoggedIn()) "repoList" else "login") }
                 when (currentScreen) {
+                    "login" -> LoginForm (
+                        onLoginSuccess = {currentScreen = "repoList" }
+                    )
                     "repoList" -> RepoList(
-                        viewModel = listViewModel,
-                        onNavigateToForm = { repo ->
-                            selectedRepo = repo
-                            currentScreen = "repoForm"
+                        onNavigateToForm = { currentScreen = "repoForm" },
+                        onLogout = {
+                            listViewModel.clearData()
+                            authService.logout()
+                            currentScreen = "login"
                         }
                     )
                     "repoForm" -> RepoForm(
-                        repository = selectedRepo,
-                        onBackClick = { 
-                            selectedRepo = null
-                            currentScreen = "repoList" 
-                        },
+                        onBackClick = {
+                            currentScreen = "repoList" },
                         onSaveSuccess = {
                             listViewModel.fetchRepos()
-                            selectedRepo = null
                             currentScreen = "repoList"
                         }
                     )

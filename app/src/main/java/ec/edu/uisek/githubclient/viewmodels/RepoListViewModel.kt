@@ -22,8 +22,9 @@ class RepoListViewModel : ViewModel (){
     private val _errorMsg = MutableStateFlow<String?>(value = null)
     val errorMsg: StateFlow<String?> = _errorMsg.asStateFlow()
 
-    init {
-        fetchRepos()
+    fun clearData() {
+        _repos.value = emptyList()
+        _errorMsg.value = null
     }
 
     fun fetchRepos(){
